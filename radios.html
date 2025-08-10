@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualizador de Radios</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans'; }
+    .circle-container { transition: transform .12s ease; }
+    .circle-container:hover { transform: translateY(-4px); }
+    .tooltip { position: relative; }
+    .tooltip:hover .tooltip-content { opacity: 1; transform: translate(-50%, -8px); pointer-events: auto; }
+    .tooltip-content {
+        position: absolute;
+        left: 50%;
+        bottom: 100%;
+        transform: translate(-50%, 8px);
+        opacity: 0;
+        transition: .15s ease;
+        background: rgba(2,6,23,.95);
+        color: #fff;
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        white-space: nowrap;
+        z-index: 20;
+        pointer-events: none;
+    }
+    .sup { font-size: .7em; vertical-align: super; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <header class="w-full border-b border-slate-200 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Visualizador de Radios</h1>
+      <div class="text-xs text-slate-500">Átomos • Iones • Series Isoelectrónicas</div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <!-- Controles -->
+    <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5">
+      <div class="grid gap-4 lg:grid-cols-3">
+        <div class="flex flex-col">
+          <label for="mode" class="text-sm font-medium text-slate-700 mb-1">Modo de Comparación</label>
+          <select id="mode" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <option value="atomVsIon">Átomo vs. Su Ion</option>
+            <option value="isoelectronic">Serie Isoelectrónica</option>
+          </select>
+        </div>
+        <div id="atomIonControls" class="flex flex-col">
+          <label for="element" class="text-sm font-medium text-slate-700 mb-1">Elemento</label>
+          <select id="element" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
+        </div>
+        <div id="isoControls" class="flex flex-col hidden">
+          <label for="series" class="text-sm font-medium text-slate-700 mb-1">Serie Isoelectrónica</label>
+          <select id="series" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visualización -->
+    <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+      <div id="vizTitle" class="text-sm text-slate-500 mb-4"></div>
+      <div id="viz" class="min-h-[200px] grid place-items-center"></div>
+    </section>
+
+    <!-- Explicación -->
+    <section id="explanation-container" class="bg-indigo-50 border-l-4 border-indigo-500 p-4 sm:p-5 rounded-r-lg">
+      <h2 class="text-base font-semibold mb-2 text-indigo-900">Explicación</h2>
+      <div id="explain" class="text-sm text-indigo-800 leading-relaxed"></div>
+    </section>
+  </main>
+
+  <script>
+    // ==================== Datos ====================
+    const data = {
+        atomVsIon: {
+            'H': { name: 'Hidrógeno', atomR: 31, ionR: 154, charge: -1, p: 1, eAtom: 1, eIon: 2 },
+            'He': { name: 'Helio', atomR: 28, ionR: 28, charge: 0, p: 2, eAtom: 2, eIon: 2 },
+            'Li': { name: 'Litio', atomR: 128, ionR: 76, charge: 1, p: 3, eAtom: 3, eIon: 2 },
+            'Be': { name: 'Berilio', atomR: 96, ionR: 45, charge: 2, p: 4, eAtom: 4, eIon: 2 },
+            'B': { name: 'Boro', atomR: 84, ionR: 27, charge: 3, p: 5, eAtom: 5, eIon: 2 },
+            'C': { name: 'Carbono', atomR: 76, ionR: 260, charge: -4, p: 6, eAtom: 6, eIon: 10 },
+            'N': { name: 'Nitrógeno', atomR: 71, ionR: 146, charge: -3, p: 7, eAtom: 7, eIon: 10 },
+            'O': { name: 'Oxígeno', atomR: 66, ionR: 140, charge: -2, p: 8, eAtom: 8, eIon: 10 },
+            'F': { name: 'Flúor', atomR: 57, ionR: 133, charge: -1, p: 9, eAtom: 9, eIon: 10 },
+            'Ne': { name: 'Neón', atomR: 58, ionR: 58, charge: 0, p: 10, eAtom: 10, eIon: 10 },
+            'Na': { name: 'Sodio', atomR: 186, ionR: 102, charge: 1, p: 11, eAtom: 11, eIon: 10 },
+            'Mg': { name: 'Magnesio', atomR: 160, ionR: 72, charge: 2, p: 12, eAtom: 12, eIon: 10 },
+            'Al': { name: 'Aluminio', atomR: 143, ionR: 53, charge: 3, p: 13, eAtom: 13, eIon: 10 },
+            'Si': { name: 'Silicio', atomR: 111, ionR: 40, charge: 4, p: 14, eAtom: 14, eIon: 10 },
+            'P': { name: 'Fósforo', atomR: 107, ionR: 212, charge: -3, p: 15, eAtom: 15, eIon: 18 },
+            'S': { name: 'Azufre', atomR: 105, ionR: 184, charge: -2, p: 16, eAtom: 16, eIon: 18 },
+            'Cl': { name: 'Cloro', atomR: 102, ionR: 181, charge: -1, p: 17, eAtom: 17, eIon: 18 },
+            'Ar': { name: 'Argón', atomR: 71, ionR: 71, charge: 0, p: 18, eAtom: 18, eIon: 18 },
+            'K': { name: 'Potasio', atomR: 227, ionR: 138, charge: 1, p: 19, eAtom: 19, eIon: 18 },
+            'Ca': { name: 'Calcio', atomR: 197, ionR: 100, charge: 2, p: 20, eAtom: 20, eIon: 18 },
+            'Ga': { name: 'Galio', atomR: 135, ionR: 62, charge: 3, p: 31, eAtom: 31, eIon: 28 },
+            'Ge': { name: 'Germanio', atomR: 122, ionR: 53, charge: 4, p: 32, eAtom: 32, eIon: 28 },
+            'As': { name: 'Arsénico', atomR: 119, ionR: 222, charge: -3, p: 33, eAtom: 33, eIon: 36 },
+            'Se': { name: 'Selenio', atomR: 120, ionR: 198, charge: -2, p: 34, eAtom: 34, eIon: 36 },
+            'Br': { name: 'Bromo', atomR: 120, ionR: 196, charge: -1, p: 35, eAtom: 35, eIon: 36 },
+            'Kr': { name: 'Kriptón', atomR: 88, ionR: 88, charge: 0, p: 36, eAtom: 36, eIon: 36 },
+            'Rb': { name: 'Rubidio', atomR: 248, ionR: 152, charge: 1, p: 37, eAtom: 37, eIon: 36 },
+            'Sr': { name: 'Estroncio', atomR: 215, ionR: 118, charge: 2, p: 38, eAtom: 38, eIon: 36 },
+            'In': { name: 'Indio', atomR: 167, ionR: 80, charge: 3, p: 49, eAtom: 49, eIon: 46 },
+            'Sn': { name: 'Estaño', atomR: 140, ionR: 69, charge: 4, p: 50, eAtom: 50, eIon: 46 },
+            'Sb': { name: 'Antimonio', atomR: 141, ionR: 245, charge: -3, p: 51, eAtom: 51, eIon: 54 },
+            'Te': { name: 'Telurio', atomR: 142, ionR: 221, charge: -2, p: 52, eAtom: 52, eIon: 54 },
+            'I': { name: 'Yodo', atomR: 140, ionR: 220, charge: -1, p: 53, eAtom: 53, eIon: 54 },
+            'Xe': { name: 'Xenón', atomR: 108, ionR: 108, charge: 0, p: 54, eAtom: 54, eIon: 54 },
+        },
+        isoelectronic: {
+            '2e': {
+                label: "2 e⁻: H⁻ a Li⁺",
+                series: [ {symbol:'H<sup class="sup">−</sup>', p:1, e:2, radius:154}, {symbol:'He', p:2, e:2, radius:28}, {symbol:'Li<sup class="sup">+</sup>', p:3, e:2, radius:76} ]
+            },
+            '10e': {
+                label: "10 e⁻: O²⁻ a Al³⁺",
+                series: [
+                    { symbol: 'O<sup class="sup">2−</sup>', radius: 140, p: 8, e: 10 }, { symbol: 'F<sup class="sup">−</sup>', radius: 133, p: 9, e: 10 },
+                    { symbol: 'Ne', radius: 71, p: 10, e: 10 }, { symbol: 'Na<sup class="sup">+</sup>', radius: 102, p: 11, e: 10 },
+                    { symbol: 'Mg<sup class="sup">2+</sup>', radius: 72, p: 12, e: 10 }, { symbol: 'Al<sup class="sup">3+</sup>', radius: 54, p: 13, e: 10 },
+                ]
+            },
+            '18e': {
+                label: "18 e⁻: S²⁻ a Ca²⁺",
+                series: [
+                    { symbol: 'P<sup class="sup">3−</sup>', radius: 212, p: 15, e: 18 }, { symbol: 'S<sup class="sup">2−</sup>', radius: 184, p: 16, e: 18 },
+                    { symbol: 'Cl<sup class="sup">−</sup>', radius: 181, p: 17, e: 18 }, { symbol: 'Ar', radius: 98, p: 18, e: 18 },
+                    { symbol: 'K<sup class="sup">+</sup>', radius: 138, p: 19, e: 18 }, { symbol: 'Ca<sup class="sup">2+</sup>', radius: 100, p: 20, e: 18 },
+                ]
+            },
+            '36e': {
+                label: "36 e⁻: Se²⁻ a Sr²⁺",
+                series: [
+                    { symbol: 'As<sup class="sup">3−</sup>', radius: 222, p: 33, e: 36 }, { symbol: 'Se<sup class="sup">2−</sup>', radius: 198, p: 34, e: 36 },
+                    { symbol: 'Br<sup class="sup">−</sup>', radius: 196, p: 35, e: 36 }, { symbol: 'Kr', radius: 88, p: 36, e: 36 },
+                    { symbol: 'Rb<sup class="sup">+</sup>', radius: 152, p: 37, e: 36 }, { symbol: 'Sr<sup class="sup">2+</sup>', radius: 118, p: 38, e: 36 },
+                ]
+            }
+        }
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const scaleRadius = (value, minOut = 20, maxOut = 100) => {
+        const allRadii = [
+            ...Object.values(data.atomVsIon).flatMap(d => [d.atomR, d.ionR]),
+            ...Object.values(data.isoelectronic).flatMap(s => s.series.map(i => i.radius))
+        ];
+        const min = Math.min(...allRadii), max = Math.max(...allRadii);
+        const t = (value - min) / (max - min + 1e-9);
+        return Math.round(minOut + t * (maxOut - minOut));
+    };
+
+    function circleItem({ labelTop, symbol, sublabel, radius, p, e, colorClass }) {
+        const px = scaleRadius(radius);
+        const symbolText = symbol.replace(/<sup.*sup>/, '');
+        return `
+          <div class="flex flex-col items-center text-center circle-container tooltip">
+            ${labelTop ? `<div class="text-sm text-slate-500 mb-2 font-medium">${labelTop}</div>` : ''}
+            <div class="grid place-items-center rounded-full shadow-sm border border-slate-200/50 text-white font-bold text-2xl ${colorClass}" style="width:${px}px; height:${px}px;">
+                ${symbolText}
+            </div>
+            <div class="mt-3 text-lg font-bold">${symbol}</div>
+            ${sublabel ? `<div class="text-xs text-slate-500">${sublabel}</div>` : ''}
+            <div class="tooltip-content">p⁺: ${p} • e⁻: ${e}</div>
+          </div>`;
+    }
+
+    const modeSel = $('mode');
+    const elementSel = $('element');
+    const seriesSel = $('series');
+    const viz = $('viz');
+    const vizTitle = $('vizTitle');
+    const explain = $('explain');
+
+    function populateSelectors() {
+        const elementOrder = ['H','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca','Ga','Ge','As','Se','Br','Kr','Rb','Sr','In','Sn','Sb','Te','I','Xe'];
+        elementSel.innerHTML = elementOrder
+            .map(k => `<option value="${k}">${k} (${data.atomVsIon[k].name})</option>`).join('');
+        elementSel.value = 'Na';
+
+        seriesSel.innerHTML = Object.keys(data.isoelectronic)
+            .map(k => `<option value="${k}">${data.isoelectronic[k].label}</option>`).join('');
+    }
+
+    function render() {
+        const mode = modeSel.value;
+        $('atomIonControls').classList.toggle('hidden', mode !== 'atomVsIon');
+        $('isoControls').classList.toggle('hidden', mode !== 'isoelectronic');
+
+        if (mode === 'atomVsIon') {
+            vizTitle.textContent = 'Átomo neutro vs. Ion más común (tamaños proporcionales)';
+            const key = elementSel.value;
+            const item = data.atomVsIon[key];
+            const chargeSign = item.charge > 0 ? '+' : (item.charge < 0 ? '−' : '');
+            const chargeVal = Math.abs(item.charge) > 1 ? Math.abs(item.charge) : '';
+            const ionSymbol = `${key}<sup class="sup">${chargeVal}${chargeSign}</sup>`;
+
+            viz.innerHTML = `
+              <div class="flex items-center justify-center gap-8 sm:gap-12">
+                ${circleItem({labelTop:'Átomo', symbol:key, sublabel:item.name, radius:item.atomR, p:item.p, e:item.eAtom, colorClass:'bg-indigo-500'})}
+                ${circleItem({labelTop:'Ion', symbol:ionSymbol, sublabel:item.charge > 0 ? 'Catión' : 'Anión', radius:item.ionR, p:item.p, e:item.eIon, colorClass:'bg-rose-500'})}
+              </div>`;
+            
+            if (item.charge > 0) {
+                explain.innerHTML = `<b class="font-semibold">${ionSymbol}</b> es <b class="font-semibold">más pequeño</b> que ${key} porque al perder electrones, el núcleo (con los mismos ${item.p} protones) atrae con más fuerza a los electrones restantes, contrayendo la nube electrónica.`;
+            } else if (item.charge < 0) {
+                explain.innerHTML = `<b class="font-semibold">${ionSymbol}</b> es <b class="font-semibold">más grande</b> que ${key} porque al ganar electrones aumenta la repulsión y el apantallamiento entre ellos, expandiendo la nube electrónica.`;
+            } else {
+                 explain.innerHTML = `Los gases nobles como el <b class="font-semibold">${item.name}</b> son muy estables y no forman iones comunes. Se muestra el átomo neutro para comparación.`;
+            }
+
+        } else { // isoelectronic
+            const key = seriesSel.value;
+            vizTitle.textContent = `Serie Isoelectrónica: ${data.isoelectronic[key].label}`;
+            const series = data.isoelectronic[key].series.slice().sort((a, b) => b.radius - a.radius);
+            
+            viz.innerHTML = `
+              <div class="w-full overflow-x-auto pb-4">
+                <div class="min-w-[700px] flex items-end justify-center gap-6 sm:gap-8">
+                  ${series.map(item => circleItem({ symbol:item.symbol, sublabel:`Z=${item.p}`, radius:item.radius, p:item.p, e:item.e, colorClass:'bg-sky-600' })).join('')}
+                </div>
+              </div>`;
+            
+            explain.innerHTML = `Todas estas especies tienen <b class="font-semibold">${series[0].e}</b> electrones. El radio <b class="font-semibold">disminuye</b> a medida que aumenta el número de protones (Z), porque un núcleo más positivo atrae con más fuerza la misma nube electrónica.`;
+        }
+    }
+
+    modeSel.addEventListener('change', render);
+    elementSel.addEventListener('change', render);
+    seriesSel.addEventListener('change', render);
+
+    populateSelectors();
+    render();
+  </script>
+</body>
+</html>
