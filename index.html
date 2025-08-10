@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seminario N° 1: Estructura Atómica y Tabla Periódica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .content-section h2 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            border-bottom: 2px solid #4f46e5; /* border-indigo-600 */
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .content-section h3 {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <!-- Header -->
+    <header class="w-full bg-white shadow-md sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 grid place-items-center text-white font-extrabold text-lg">Q</div>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Química para Ingeniería</h1>
+            </div>
+            <nav class="hidden md:flex gap-6 text-sm font-semibold">
+                <a href="#resumen" class="text-slate-600 hover:text-indigo-600">Resumen Teórico</a>
+                <a href="#apps" class="text-slate-600 hover:text-indigo-600">Laboratorios Interactivos</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Título del Seminario -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">Seminario N° 1</h1>
+            <p class="mt-2 text-xl md:text-2xl text-slate-600">Estructura Atómica y Tabla Periódica</p>
+        </div>
+
+        <!-- Sección de Resumen Teórico -->
+        <section id="resumen" class="content-section bg-white p-6 sm:p-8 rounded-2xl shadow-lg mb-12">
+            <h2>Resumen Teórico</h2>
+
+            <h3>Modelos Atómicos</h3>
+            <p class="mb-4">La comprensión del átomo ha evolucionado desde las ideas filosóficas de <strong>Demócrito</strong> (partículas indivisibles) y el modelo de esferas macizas de <strong>Dalton</strong>, hasta los descubrimientos de partículas subatómicas. <strong>Thomson</strong> propuso el modelo del "pudín de pasas" al descubrir el electrón. <strong>Rutherford</strong>, con su experimento de la lámina de oro, reveló un núcleo denso y positivo, descubriendo el protón. <strong>Bohr</strong> introdujo los niveles de energía cuantizados. El <strong>Modelo Actual</strong>, basado en la mecánica cuántica, describe a los electrones en orbitales de probabilidad (s, p, d, f) e incluye al neutrón.</p>
+
+            <h3>Partículas y Notación</h3>
+            <p class="mb-4">El átomo se compone de <strong>protones (p⁺)</strong>, <strong>neutrones (n⁰)</strong> y <strong>electrones (e⁻)</strong>. La notación <code class="bg-slate-200 p-1 rounded-md text-sm"><sup>A</sup><sub>Z</sub>X</code> nos permite decodificar su estructura: <strong>Z</strong> es el número atómico (p⁺), y <strong>A</strong> es el número de masa (p⁺ + n⁰). En un ion con carga <strong>q</strong>, el número de electrones es <strong>Z - q</strong>.</p>
+            
+            <h3>Conceptos Clave</h3>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+                <li><strong>Isótopos:</strong> Átomos con el mismo Z pero diferente A (distinto número de neutrones).</li>
+                <li><strong>Iones:</strong> Átomos que ganan (aniones, negativos) o pierden (cationes, positivos) electrones para alcanzar estabilidad.</li>
+                <li><strong>Especies Isoelectrónicas:</strong> Átomos o iones con el mismo número de electrones.</li>
+            </ul>
+
+            <h3>Configuración Electrónica</h3>
+            <p class="mb-4">Es la distribución de electrones en los orbitales, y sigue tres reglas fundamentales:</p>
+            <ol class="list-decimal list-inside space-y-2 mb-4">
+                <li><strong>Principio de Aufbau:</strong> Los electrones llenan primero los orbitales de menor energía.</li>
+                <li><strong>Principio de Exclusión de Pauli:</strong> Máximo dos electrones por orbital, con espines opuestos.</li>
+                <li><strong>Regla de Hund:</strong> En orbitales de igual energía, los electrones se distribuyen con el máximo número de espines paralelos antes de aparearse.</li>
+            </ol>
+            <p>La configuración determina la posición de un elemento en la tabla (período, grupo, bloque) y sus propiedades.</p>
+
+            <h3>Propiedades Periódicas</h3>
+            <p>Las propiedades de los elementos varían de forma predecible:</p>
+            <ul class="list-disc list-inside space-y-2">
+                <li><strong>Radio Atómico:</strong> Aumenta hacia la izquierda y hacia abajo. Los cationes son más pequeños y los aniones más grandes que sus átomos neutros.</li>
+                <li><strong>Energía de Ionización:</strong> Energía para quitar un e⁻. Aumenta hacia la derecha y hacia arriba.</li>
+                <li><strong>Electronegatividad:</strong> Capacidad de atraer e⁻ en un enlace. Aumenta hacia la derecha y hacia arriba.</li>
+            </ul>
+        </section>
+
+        <!-- Sección de Laboratorios Interactivos -->
+        <section id="apps" class="content-section">
+            <h2>Laboratorios Interactivos</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- App Card -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mt-0 mb-2">Constructor Atómico</h3>
+                        <p class="text-sm text-slate-600 mb-4">Construye átomos e iones partícula por partícula y observa cómo cambia su notación y estabilidad.</p>
+                        <a href="./constructor.html" target="_blank" class="inline-block bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700">Abrir Laboratorio</a>
+                    </div>
+                </div>
+                <!-- App Card -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mt-0 mb-2">Configuración Electrónica</h3>
+                        <p class="text-sm text-slate-600 mb-4">Visualiza cómo se llenan los orbitales siguiendo las reglas de Aufbau, Pauli y Hund.</p>
+                        <a href="./llenado.html" target="_blank" class="inline-block bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700">Abrir Laboratorio</a>
+                    </div>
+                </div>
+                <!-- App Card -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mt-0 mb-2">Mapa de Tendencias</h3>
+                        <p class="text-sm text-slate-600 mb-4">Explora las tendencias periódicas en un mapa de calor interactivo y compara elementos.</p>
+                        <a href="./tendencias.html" target="_blank" class="inline-block bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700">Abrir Laboratorio</a>
+                    </div>
+                </div>
+                <!-- App Card -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mt-0 mb-2">Visualizador de Radios</h3>
+                        <p class="text-sm text-slate-600 mb-4">Compara el tamaño de átomos, iones y especies isoelectrónicas de forma visual.</p>
+                        <a href="./radios.html" target="_blank" class="inline-block bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700">Abrir Laboratorio</a>
+                    </div>
+                </div>
+                <!-- App Card -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mt-0 mb-2">Decodificador de Configuración</h3>
+                        <p class="text-sm text-slate-600 mb-4">Introduce una configuración electrónica y deduce la posición del elemento en la tabla.</p>
+                        <a href="./decod.html" target="_blank" class="inline-block bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700">Abrir Laboratorio</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
