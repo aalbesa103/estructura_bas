@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa de Tendencias Periódicas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans'; }
+    .tile { transition: transform .08s ease, box-shadow .15s ease, background-color .2s ease, border-color .2s ease; }
+    .tile:active { transform: scale(.98); }
+    .badge { font-size: 10px; padding: 0 6px; border-radius: 999px; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <!-- Header -->
+  <header class="w-full border-b border-slate-200 bg-white sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-rose-500 to-indigo-600 grid place-items-center text-white font-extrabold">TP</div>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Mapa de Tendencias Periódicas</h1>
+      </div>
+      <div class="text-xs text-slate-500">Períodos 1–5 • Interactivo</div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+    <!-- Selector & leyenda -->
+    <aside class="xl:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5">
+      <h2 class="text-lg font-semibold mb-4">Propiedad a visualizar</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-2 mb-3">
+        <button data-prop="radius" class="prop-btn rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-200">Radio atómico</button>
+        <button data-prop="ionization" class="prop-btn rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-50">Energía de ionización</button>
+        <button data-prop="eneg" class="prop-btn rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-50">Electronegatividad</button>
+      </div>
+      <div class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-3">
+        <div id="legendTitle" class="font-semibold mb-1">Leyenda: Radio atómico</div>
+        <div class="flex items-center gap-2">
+          <div id="legendBar" class="h-2 flex-1 rounded" style="background: linear-gradient(90deg, rgb(239,68,68), rgb(59,130,246));"></div>
+        </div>
+        <div class="mt-1 flex justify-between text-[11px]"><span>Alto</span><span>Bajo</span></div>
+      </div>
+      <div class="mt-4 flex items-center justify-between">
+        <button id="clearBtn" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-50">Limpiar selección</button>
+        <span class="text-xs text-slate-500">Selecciona 2 elementos</span>
+      </div>
+    </aside>
+
+    <!-- Tabla periódica -->
+    <section class="xl:col-span-6 bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-semibold">Tabla periódica (hasta período 5)</h2>
+        <span class="text-xs text-slate-500">Heatmap según propiedad</span>
+      </div>
+      <!-- Contenedor para la flecha horizontal -->
+      <div id="h-arrow-container" class="px-[5.5%] mb-1">
+          <svg id="h-arrow" viewBox="0 0 160 10" class="w-full h-4">
+              <path id="h-arrow-path" d="M150 5H10 M10 5L20 0 M10 5L20 10" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div id="h-arrow-text" class="text-center text-xs font-semibold text-slate-800">Aumenta</div>
+      </div>
+      <div class="relative">
+        <div id="table" class="grid gap-1 sm:gap-1.5" style="grid-template-columns: repeat(18, minmax(0, 1fr));"></div>
+        <!-- Contenedor para la flecha vertical -->
+        <div id="trend-arrows" class="absolute inset-0 pointer-events-none">
+            <div class="absolute -left-4 top-0 h-full w-5 flex items-center">
+                 <div class="relative w-full h-3/4">
+                    <svg id="v-arrow" viewBox="0 0 10 160" class="h-full w-full">
+                        <path id="v-arrow-path" d="M5 10V150 M5 150L0 140 M5 150L10 140" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    </svg>
+                    <div id="v-arrow-text" class="text-center text-xs font-semibold text-slate-800 absolute inset-0 flex items-center justify-center -rotate-90">Aumenta</div>
+                 </div>
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparación & explicación -->
+    <aside class="xl:col-span-3 space-y-4">
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5">
+        <h2 class="text-lg font-semibold mb-3">Comparación</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="border border-slate-200 rounded-xl p-3">
+            <div class="text-xs text-slate-500">Elemento A</div>
+            <div id="cardA" class="mt-1 space-y-1"></div>
+          </div>
+          <div class="border border-slate-200 rounded-xl p-3">
+            <div class="text-xs text-slate-500">Elemento B</div>
+            <div id="cardB" class="mt-1 space-y-1"></div>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3" id="vizWrap">
+          <div class="border border-slate-200 rounded-xl p-3">
+            <div class="text-xs text-slate-500 mb-1">Radio relativo</div>
+            <svg viewBox="0 0 160 120" class="w-full h-28">
+              <circle id="rA" cx="45" cy="70" r="0" fill="#3b82f6" opacity="0.85" />
+              <circle id="rB" cx="115" cy="70" r="0" fill="#16a34a" opacity="0.85" />
+            </svg>
+          </div>
+          <div class="border border-slate-200 rounded-xl p-3">
+            <div id="barTitle" class="text-xs text-slate-500 mb-1">Propiedad relativa</div>
+            <div class="h-28 grid grid-cols-2 gap-6 items-end">
+              <div class="w-8 mx-auto bg-blue-300 rounded-t-sm" style="height: 0" id="barA"></div>
+              <div class="w-8 mx-auto bg-green-300 rounded-t-sm" style="height: 0" id="barB"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5">
+        <h2 class="text-lg font-semibold mb-2">Explicación dinámica</h2>
+        <div id="explain" class="text-sm text-slate-700 leading-relaxed"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const ELEMENTS = [
+      {Z:1,sym:'H',name:'Hidrógeno',period:1,group:1},{Z:2,sym:'He',name:'Helio',period:1,group:18},{Z:3,sym:'Li',name:'Litio',period:2,group:1},{Z:4,sym:'Be',name:'Berilio',period:2,group:2},{Z:5,sym:'B',name:'Boro',period:2,group:13},{Z:6,sym:'C',name:'Carbono',period:2,group:14},{Z:7,sym:'N',name:'Nitrógeno',period:2,group:15},{Z:8,sym:'O',name:'Oxígeno',period:2,group:16},{Z:9,sym:'F',name:'Flúor',period:2,group:17},{Z:10,sym:'Ne',name:'Neón',period:2,group:18},{Z:11,sym:'Na',name:'Sodio',period:3,group:1},{Z:12,sym:'Mg',name:'Magnesio',period:3,group:2},{Z:13,sym:'Al',name:'Aluminio',period:3,group:13},{Z:14,sym:'Si',name:'Silicio',period:3,group:14},{Z:15,sym:'P',name:'Fósforo',period:3,group:15},{Z:16,sym:'S',name:'Azufre',period:3,group:16},{Z:17,sym:'Cl',name:'Cloro',period:3,group:17},{Z:18,sym:'Ar',name:'Argón',period:3,group:18},{Z:19,sym:'K',name:'Potasio',period:4,group:1},{Z:20,sym:'Ca',name:'Calcio',period:4,group:2},{Z:21,sym:'Sc',name:'Escandio',period:4,group:3},{Z:22,sym:'Ti',name:'Titanio',period:4,group:4},{Z:23,sym:'V',name:'Vanadio',period:4,group:5},{Z:24,sym:'Cr',name:'Cromo',period:4,group:6},{Z:25,sym:'Mn',name:'Manganeso',period:4,group:7},{Z:26,sym:'Fe',name:'Hierro',period:4,group:8},{Z:27,sym:'Co',name:'Cobalto',period:4,group:9},{Z:28,sym:'Ni',name:'Níquel',period:4,group:10},{Z:29,sym:'Cu',name:'Cobre',period:4,group:11},{Z:30,sym:'Zn',name:'Zinc',period:4,group:12},{Z:31,sym:'Ga',name:'Galio',period:4,group:13},{Z:32,sym:'Ge',name:'Germanio',period:4,group:14},{Z:33,sym:'As',name:'Arsénico',period:4,group:15},{Z:34,sym:'Se',name:'Selenio',period:4,group:16},{Z:35,sym:'Br',name:'Bromo',period:4,group:17},{Z:36,sym:'Kr',name:'Kriptón',period:4,group:18},{Z:37,sym:'Rb',name:'Rubidio',period:5,group:1},{Z:38,sym:'Sr',name:'Estroncio',period:5,group:2},{Z:39,sym:'Y',name:'Itrio',period:5,group:3},{Z:40,sym:'Zr',name:'Zirconio',period:5,group:4},{Z:41,sym:'Nb',name:'Niobio',period:5,group:5},{Z:42,sym:'Mo',name:'Molibdeno',period:5,group:6},{Z:43,sym:'Tc',name:'Tecnecio',period:5,group:7},{Z:44,sym:'Ru',name:'Rutenio',period:5,group:8},{Z:45,sym:'Rh',name:'Rodio',period:5,group:9},{Z:46,sym:'Pd',name:'Paladio',period:5,group:10},{Z:47,sym:'Ag',name:'Plata',period:5,group:11},{Z:48,sym:'Cd',name:'Cadmio',period:5,group:12},{Z:49,sym:'In',name:'Indio',period:5,group:13},{Z:50,sym:'Sn',name:'Estaño',period:5,group:14},{Z:51,sym:'Sb',name:'Antimonio',period:5,group:15},{Z:52,sym:'Te',name:'Telurio',period:5,group:16},{Z:53,sym:'I',name:'Yodo',period:5,group:17},{Z:54,sym:'Xe',name:'Xenón',period:5,group:18},
+    ];
+
+    function getScore(e, prop) {
+      if (prop === 'radius') return (e.period - 1) * 20 + (18 - e.group) * 2;
+      let base = (6 - e.period) * 18 + e.group * 2;
+      if (prop === 'eneg' && e.group === 18) base *= 0.5;
+      return base;
+    }
+
+    function heatColor(value, min, max) {
+      const t = (value - min) / (max - min + 1e-9);
+      const hue = 240 - 240 * t; // 240=azul (bajo) -> 0=rojo (alto)
+      return `hsl(${hue}, 85%, 60%)`;
+    }
+
+    const state = { selections: [], currentProp: 'radius' };
+    const tableEl = document.getElementById('table');
+
+    function renderTable() {
+      tableEl.innerHTML = '';
+      for (let r = 1; r <= 5; r++) {
+        for (let c = 1; c <= 18; c++) {
+          const cell = document.createElement('div');
+          const el = ELEMENTS.find(e => e.period === r && e.group === c);
+          if (el) {
+            const btn = document.createElement('button');
+            btn.className = 'tile w-full aspect-square rounded-lg border bg-white grid place-items-center text-[12px] sm:text-sm font-semibold';
+            btn.dataset.z = el.Z;
+            btn.addEventListener('click', () => selectElement(el.Z));
+            btn.innerHTML = `<div class="text-base sm:text-lg font-extrabold">${el.sym}</div><div class="text-[10px] sm:text-xs text-slate-600">${el.Z}</div>`;
+            cell.appendChild(btn);
+          }
+          tableEl.appendChild(cell);
+        }
+      }
+      applyHeatmap();
+      updatePanels();
+    }
+
+    function applyHeatmap() {
+      const scores = ELEMENTS.map(e => getScore(e, state.currentProp));
+      const min = Math.min(...scores), max = Math.max(...scores);
+      
+      tableEl.querySelectorAll('button.tile').forEach(btn => {
+        const e = ELEMENTS.find(x => x.Z == btn.dataset.z);
+        const s = getScore(e, state.currentProp);
+        btn.style.backgroundColor = heatColor(s, min, max);
+        btn.style.borderColor = 'rgba(0,0,0,0.08)';
+        btn.style.color = '#fff';
+      });
+
+      const legendBar = document.getElementById('legendBar');
+      const legendTitle = document.getElementById('legendTitle');
+      const propName = {radius: 'Radio atómico', ionization: 'Energía de ionización', eneg: 'Electronegatividad'}[state.currentProp];
+      legendTitle.textContent = `Leyenda: ${propName}`;
+      legendBar.style.background = 'linear-gradient(90deg, hsl(0,85%,60%), hsl(240,85%,60%))';
+      
+      updateTrendArrows(state.currentProp);
+    }
+
+    function updateTrendArrows(prop) {
+        const hArrowPath = document.getElementById('h-arrow-path');
+        const vArrowPath = document.getElementById('v-arrow-path');
+
+        if (prop === 'radius') {
+            hArrowPath.setAttribute('d', 'M150 5H10 M10 5L20 0 M10 5L20 10');
+            vArrowPath.setAttribute('d', 'M5 10V150 M5 150L0 140 M5 150L10 140');
+        } else {
+            hArrowPath.setAttribute('d', 'M10 5H150 M150 5L140 0 M150 5L140 10');
+            vArrowPath.setAttribute('d', 'M5 150V10 M5 10L0 20 M5 10L10 20');
+        }
+    }
+
+    function selectElement(Z) {
+      const idx = state.selections.indexOf(Z);
+      if (idx >= 0) { state.selections.splice(idx, 1); }
+      else if (state.selections.length < 2) { state.selections.push(Z); }
+      else { state.selections.shift(); state.selections.push(Z); }
+      updatePanels();
+    }
+
+    const cardA = document.getElementById('cardA');
+    const cardB = document.getElementById('cardB');
+    const rA = document.getElementById('rA');
+    const rB = document.getElementById('rB');
+    const barA = document.getElementById('barA');
+    const barB = document.getElementById('barB');
+    const barTitle = document.getElementById('barTitle');
+    const explain = document.getElementById('explain');
+
+    function updatePanels() {
+        tableEl.querySelectorAll('button.tile').forEach(btn => {
+            btn.classList.remove('ring-4','ring-sky-400','ring-emerald-400');
+            if (state.selections[0] == btn.dataset.z) btn.classList.add('ring-4','ring-sky-400');
+            if (state.selections[1] == btn.dataset.z) btn.classList.add('ring-4','ring-emerald-400');
+        });
+
+        const elA = ELEMENTS.find(e => e.Z === state.selections[0]);
+        const elB = ELEMENTS.find(e => e.Z === state.selections[1]);
+        
+        renderCard(cardA, elA);
+        renderCard(cardB, elB);
+        updateVisuals(elA, elB);
+        explain.innerHTML = buildExplanation(elA, elB);
+    }
+
+    function renderCard(container, e) {
+        if (!e) {
+            container.innerHTML = `<div class="text-2xl font-extrabold text-slate-300">—</div>`;
+            return;
+        }
+        container.innerHTML = `<div class="text-2xl font-extrabold">${e.sym}</div>
+        <div class="text-sm text-slate-600">${e.name}</div>`;
+    }
+
+    function updateVisuals(a, b) {
+        const prop = state.currentProp;
+        const allScores = ELEMENTS.map(e => getScore(e, prop));
+        const minScore = Math.min(...allScores), maxScore = Math.max(...allScores);
+        
+        const scale = (val, min, max, outMin, outMax) => outMin + ((val - min) / (max - min)) * (outMax - outMin);
+        
+        const rScores = ELEMENTS.map(e => getScore(e, 'radius'));
+        const minR = Math.min(...rScores), maxR = Math.max(...rScores);
+        rA.setAttribute('r', a ? scale(getScore(a, 'radius'), minR, maxR, 8, 50) : 0);
+        rB.setAttribute('r', b ? scale(getScore(b, 'radius'), minR, maxR, 8, 50) : 0);
+
+        barTitle.textContent = {radius: 'Radio', ionization: 'E. Ionización', eneg: 'Electroneg.'}[prop] + ' relativa';
+        barA.style.height = a ? `${scale(getScore(a, prop), minScore, maxScore, 5, 100)}%` : '0%';
+        barB.style.height = b ? `${scale(getScore(b, prop), minScore, maxScore, 5, 100)}%` : '0%';
+    }
+
+    function buildExplanation(a, b) {
+        if (!a || !b) return 'Selecciona dos elementos para generar la explicación.';
+        
+        const prop = state.currentProp;
+        const propName = {radius: 'radio atómico', ionization: 'energía de ionización', eneg: 'electronegatividad'}[prop];
+        const scoreA = getScore(a, prop), scoreB = getScore(b, prop);
+        
+        const [hi, lo] = scoreA > scoreB ? [a, b] : [b, a];
+        const compWord = 'mayor';
+        const trendDir = prop === 'radius' ? 'menor' : 'mayor';
+        
+        let reason = '';
+        if (a.period === b.period) {
+            reason = `Ambos están en el <b class="font-semibold">período ${a.period}</b>. Al moverse a la derecha, la <b class="font-semibold">carga nuclear efectiva</b> aumenta, lo que resulta en un/a ${propName} ${trendDir}.`;
+        } else if (a.group === b.group) {
+            reason = `Ambos están en el <b class="font-semibold">grupo ${a.group}</b>. Al descender, los electrones de valencia ocupan <b class="font-semibold">niveles de energía superiores</b>, resultando en un/a ${propName} ${trendDir === 'mayor' ? 'menor' : 'mayor'}.`;
+        } else {
+            reason = 'La tendencia es una combinación de efectos de período y grupo.';
+        }
+        
+        return `<b class="font-semibold text-indigo-700">${hi.name}</b> tiene un/a ${propName} <b class="font-semibold">${compWord}</b> que <b class="font-semibold text-indigo-700">${lo.name}</b>. ${reason}`;
+    }
+
+    document.querySelectorAll('.prop-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        state.currentProp = b.dataset.prop;
+        document.querySelectorAll('.prop-btn').forEach(x => x.classList.replace('bg-slate-100', 'bg-white'));
+        b.classList.replace('bg-white', 'bg-slate-100');
+        applyHeatmap();
+        updatePanels();
+      });
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      state.selections = [];
+      updatePanels();
+    });
+
+    renderTable();
+    selectElement(11); // Na
+    selectElement(17); // Cl
+  </script>
+</body>
+</html>
