@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Decodificador de Configuración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans'; }
+        .mini-cell { transition: transform .08s ease; }
+        .mini-cell:hover { transform: scale(1.02); }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-800 text-center mb-6">Decodificador de Configuración</h1>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <!-- Panel de Entrada y Resultados -->
+            <div class="space-y-6">
+                <!-- Panel de Entrada -->
+                <section class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-lg font-semibold mb-3">1. Ingresa la Configuración</h2>
+                    <textarea id="cfg" class="w-full h-24 p-3 border border-slate-300 rounded-lg mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej: 1s2 2s2 2p6 3s2 3p4 o [Ne] 3s2 3p4"></textarea>
+                    <div id="error" class="text-red-600 text-sm mt-2 h-5 hidden">Formato inválido.</div>
+                    <div class="flex gap-4 mt-2">
+                        <button id="analyzeBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-transform active:scale-95">Analizar</button>
+                        <button id="randomBtn" class="flex-1 bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-transform active:scale-95">Ejemplo Aleatorio</button>
+                    </div>
+                </section>
+
+                <!-- Panel de Resultados -->
+                <section class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-xl font-bold mb-4">2. Análisis del Elemento</h2>
+                    <div id="results-grid" class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                        <div class="font-semibold text-slate-600">Período:</div>
+                        <div id="period" class="font-bold text-lg text-indigo-700">—</div>
+                        <div class="font-semibold text-slate-600">Grupo:</div>
+                        <div id="group" class="font-bold text-lg text-indigo-700">—</div>
+                        <div class="font-semibold text-slate-600">Bloque:</div>
+                        <div id="block" class="font-bold text-lg text-indigo-700">—</div>
+                        <div class="font-semibold text-slate-600">e⁻ de Valencia (n=n_max):</div>
+                        <div id="valence" class="font-bold text-lg text-indigo-700">—</div>
+                        <div class="font-semibold text-slate-600">Clasificación:</div>
+                        <div id="classif" class="font-bold text-lg text-indigo-700">—</div>
+                        <div class="font-semibold text-slate-600">Elemento (por Z total):</div>
+                        <div id="elem" class="font-bold text-lg text-indigo-700">—</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Mini Tabla Periódica -->
+            <section class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-lg font-bold mb-3">3. Ubicación en la Tabla</h2>
+                <div class="w-full bg-slate-50 rounded-lg p-2">
+                    <svg id="mini" viewBox="0 0 900 350" class="w-full h-auto">
+                        <!-- Celdas y bloques se generan aquí -->
+                    </svg>
+                </div>
+                 <div class="text-[11px] text-slate-500 mt-2">Se marca la posición <span class="font-semibold">deducida</span>. El color de fondo indica el bloque.</div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // ===================== Datos base periódicos (Z 1–54) =====================
+        const ELEMENTS = [
+            {Z:1,sym:'H',name:'Hidrógeno',period:1,group:1,type:'No metal'},{Z:2,sym:'He',name:'Helio',period:1,group:18,type:'Gas noble'},{Z:3,sym:'Li',name:'Litio',period:2,group:1,type:'Metal alcalino'},{Z:4,sym:'Be',name:'Berilio',period:2,group:2,type:'Metal alcalinotérreo'},{Z:5,sym:'B',name:'Boro',period:2,group:13,type:'Metaloide'},{Z:6,sym:'C',name:'Carbono',period:2,group:14,type:'No metal'},{Z:7,sym:'N',name:'Nitrógeno',period:2,group:15,type:'No metal'},{Z:8,sym:'O',name:'Oxígeno',period:2,group:16,type:'No metal'},{Z:9,sym:'F',name:'Flúor',period:2,group:17,type:'No metal'},{Z:10,sym:'Ne',name:'Neón',period:2,group:18,type:'Gas noble'},{Z:11,sym:'Na',name:'Sodio',period:3,group:1,type:'Metal alcalino'},{Z:12,sym:'Mg',name:'Magnesio',period:3,group:2,type:'Metal alcalinotérreo'},{Z:13,sym:'Al',name:'Aluminio',period:3,group:13,type:'Metal'},{Z:14,sym:'Si',name:'Silicio',period:3,group:14,type:'Metaloide'},{Z:15,sym:'P',name:'Fósforo',period:3,group:15,type:'No metal'},{Z:16,sym:'S',name:'Azufre',period:3,group:16,type:'No metal'},{Z:17,sym:'Cl',name:'Cloro',period:3,group:17,type:'No metal'},{Z:18,sym:'Ar',name:'Argón',period:3,group:18,type:'Gas noble'},{Z:19,sym:'K',name:'Potasio',period:4,group:1,type:'Metal alcalino'},{Z:20,sym:'Ca',name:'Calcio',period:4,group:2,type:'Metal alcalinotérreo'},{Z:21,sym:'Sc',name:'Escandio',period:4,group:3,type:'Metal de transición'},{Z:22,sym:'Ti',name:'Titanio',period:4,group:4,type:'Metal de transición'},{Z:23,sym:'V',name:'Vanadio',period:4,group:5,type:'Metal de transición'},{Z:24,sym:'Cr',name:'Cromo',period:4,group:6,type:'Metal de transición'},{Z:25,sym:'Mn',name:'Manganeso',period:4,group:7,type:'Metal de transición'},{Z:26,sym:'Fe',name:'Hierro',period:4,group:8,type:'Metal de transición'},{Z:27,sym:'Co',name:'Cobalto',period:4,group:9,type:'Metal de transición'},{Z:28,sym:'Ni',name:'Níquel',period:4,group:10,type:'Metal de transición'},{Z:29,sym:'Cu',name:'Cobre',period:4,group:11,type:'Metal de transición'},{Z:30,sym:'Zn',name:'Zinc',period:4,group:12,type:'Metal de transición'},{Z:31,sym:'Ga',name:'Galio',period:4,group:13,type:'Metal'},{Z:32,sym:'Ge',name:'Germanio',period:4,group:14,type:'Metaloide'},{Z:33,sym:'As',name:'Arsénico',period:4,group:15,type:'Metaloide'},{Z:34,sym:'Se',name:'Selenio',period:4,group:16,type:'No metal'},{Z:35,sym:'Br',name:'Bromo',period:4,group:17,type:'No metal'},{Z:36,sym:'Kr',name:'Kriptón',period:4,group:18,type:'Gas noble'},{Z:37,sym:'Rb',name:'Rubidio',period:5,group:1,type:'Metal alcalino'},{Z:38,sym:'Sr',name:'Estroncio',period:5,group:2,type:'Metal alcalinotérreo'},{Z:39,sym:'Y',name:'Itrio',period:5,group:3,type:'Metal de transición'},{Z:40,sym:'Zr',name:'Zirconio',period:5,group:4,type:'Metal de transición'},{Z:41,sym:'Nb',name:'Niobio',period:5,group:5,type:'Metal de transición'},{Z:42,sym:'Mo',name:'Molibdeno',period:5,group:6,type:'Metal de transición'},{Z:43,sym:'Tc',name:'Tecnecio',period:5,group:7,type:'Metal de transición'},{Z:44,sym:'Ru',name:'Rutenio',period:5,group:8,type:'Metal de transición'},{Z:45,sym:'Rh',name:'Rodio',period:5,group:9,type:'Metal de transición'},{Z:46,sym:'Pd',name:'Paladio',period:5,group:10,type:'Metal de transición'},{Z:47,sym:'Ag',name:'Plata',period:5,group:11,type:'Metal de transición'},{Z:48,sym:'Cd',name:'Cadmio',period:5,group:12,type:'Metal de transición'},{Z:49,sym:'In',name:'Indio',period:5,group:13,type:'Metal'},{Z:50,sym:'Sn',name:'Estaño',period:5,group:14,type:'Metal'},{Z:51,sym:'Sb',name:'Antimonio',period:5,group:15,type:'Metaloide'},{Z:52,sym:'Te',name:'Telurio',period:5,group:16,type:'Metaloide'},{Z:53,sym:'I',name:'Yodo',period:5,group:17,type:'No metal'},{Z:54,sym:'Xe',name:'Xenón',period:5,group:18,type:'Gas noble'},
+        ];
+
+        // ===================== Mini‑tabla (SVG 7x18) =====================
+        const svg = document.getElementById('mini');
+        const CELL_W = 48, CELL_H = 42, PAD_X = 10, PAD_Y = 20;
+
+        function drawGrid(){
+            svg.innerHTML = ''; // Limpiar SVG
+            const blocks = [
+                {x:0, w:2, fill:'#fecaca'}, // s
+                {x:2, w:10, fill:'#fef9c3'}, // d
+                {x:12, w:6, fill:'#dbeafe'}, // p
+            ];
+            blocks.forEach(b=>{
+                const rect = rectEl(PAD_X + b.x*CELL_W, PAD_Y, b.w*CELL_W, 7*CELL_H, b.fill, 'none');
+                rect.setAttribute('opacity','0.6');
+                svg.appendChild(rect);
+            });
+            for (let r=0;r<7;r++){
+                for (let c=0;c<18;c++){
+                    const x = PAD_X + c*CELL_W; const y = PAD_Y + r*CELL_H;
+                    const cell = rectEl(x, y, CELL_W-2, CELL_H-2, '#ffffff', '#e5e7eb');
+                    cell.setAttribute('class','mini-cell');
+                    svg.appendChild(cell);
+                }
+            }
+            for (let c=1;c<=18;c++) svg.appendChild(textEl(PAD_X + (c-0.5)*CELL_W, PAD_Y-6, String(c), 'middle', '0.65rem'));
+            for (let r=1;r<=7;r++) svg.appendChild(textEl(PAD_X-6, PAD_Y + (r-0.5)*CELL_H+4, String(r), 'end', '0.65rem'));
+        }
+
+        function rectEl(x,y,w,h,fill,stroke){ const r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x',x); r.setAttribute('y',y); r.setAttribute('width',w); r.setAttribute('height',h); r.setAttribute('fill',fill); r.setAttribute('stroke',stroke); r.setAttribute('rx',6); return r; }
+        function textEl(x,y,str,anchor='start',size='0.8rem'){ const t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',x); t.setAttribute('y',y); t.setAttribute('text-anchor',anchor); t.setAttribute('font-size',size); t.setAttribute('fill','#334155'); t.textContent=str; return t; }
+
+        drawGrid();
+
+        const marker = rectEl(0,0,CELL_W-2,CELL_H-2,'#4f46e5','none');
+        marker.setAttribute('visibility','hidden');
+        svg.appendChild(marker);
+
+        const symText = textEl(0,0,'','middle','0.95rem');
+        symText.setAttribute('font-weight','700');
+        symText.setAttribute('fill','white');
+        symText.setAttribute('visibility','hidden');
+        svg.appendChild(symText);
+
+        function placeMarker(period, group, symbol){
+            if (!period || !group) { marker.setAttribute('visibility','hidden'); symText.setAttribute('visibility','hidden'); return; }
+            const x = PAD_X + (group-1)*CELL_W + (CELL_W-2)/2;
+            const y = PAD_Y + (period-1)*CELL_H + (CELL_H-2)/2;
+            marker.setAttribute('x', x-(CELL_W-2)/2); marker.setAttribute('y', y-(CELL_H-2)/2);
+            marker.setAttribute('visibility','visible');
+            symText.setAttribute('x', x); symText.setAttribute('y', y+6);
+            symText.textContent = symbol || '';
+            symText.setAttribute('visibility','visible');
+        }
+
+        // ===================== Parser de configuración =====================
+        const SUP_MAP = {'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+        const NG_CORES = { 'He':2, 'Ne':10, 'Ar':18, 'Kr':36, 'Xe':54 };
+        const NG_PERIOD = { 'He':1, 'Ne':2, 'Ar':3, 'Kr':4, 'Xe':5 };
+
+        function normalize(input){
+            let s = input.trim();
+            if (!s) return '';
+            s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, ch => SUP_MAP[ch] || ch);
+            s = s.replace(/[,+]/g,' ').replace(/\s+/g,' ').trim();
+            return s;
+        }
+
+        function parseConfiguration(str){
+            const s = normalize(str);
+            if (!s) return null;
+            let total = 0, terms = [], corePeriod = null;
+            const coreMatch = s.match(/^\[(He|Ne|Ar|Kr|Xe)\]\s*(.*)$/i);
+            let rest = s;
+            if (coreMatch){
+                const core = coreMatch[1].charAt(0).toUpperCase()+coreMatch[1].slice(1).toLowerCase();
+                total += NG_CORES[core];
+                corePeriod = NG_PERIOD[core];
+                rest = coreMatch[2];
+            }
+            const termRe = /(\d)([spdf])(\d{1,2})/gi;
+            let m;
+            while ((m = termRe.exec(rest))){
+                terms.push({n: parseInt(m[1]), l: m[2].toLowerCase(), e: parseInt(m[3])});
+                total += parseInt(m[3]);
+            }
+            if (terms.length===0 && corePeriod==null) return null;
+            return { totalZ: total, terms, corePeriod };
+        }
+
+        // ===================== Deducciones =====================
+        function deduceProperties(parsed) {
+            if (!parsed) return {};
+            const { totalZ, terms, corePeriod } = parsed;
+            
+            const nMax = terms.length > 0 ? Math.max(...terms.map(t => t.n)) : corePeriod;
+            if (!nMax) return { totalZ };
+
+            const valenceElectrons = terms.filter(t => t.n === nMax).reduce((acc, t) => acc + t.e, 0);
+            
+            const lastTerm = terms.length > 0 ? terms[terms.length - 1] : null;
+            let block = lastTerm ? lastTerm.l.toUpperCase() : 'P'; // Default to P for pure noble gas
+            let group = null;
+
+            if (lastTerm) {
+                if (block === 'S') {
+                    group = valenceElectrons;
+                    if (nMax === 1 && valenceElectrons === 2) group = 18; // He exception
+                } else if (block === 'P') {
+                    group = 10 + valenceElectrons;
+                } else if (block === 'D') {
+                    const s_nmax = terms.find(t => t.n === nMax && t.l === 's')?.e || 0;
+                    const d_nmax_minus_1 = terms.find(t => t.n === nMax - 1 && t.l === 'd')?.e || 0;
+                    group = s_nmax + d_nmax_minus_1;
+                }
+            } else if (corePeriod) { // Pure noble gas config like [Ar]
+                group = 18;
+            }
+
+            let classification = 'Desconocido';
+            const el = ELEMENTS.find(e => e.Z === totalZ);
+            if (el) {
+                classification = el.type;
+            } else if (group) {
+                 if (group === 18) classification = 'Gas noble';
+                 else if (group === 17) classification = 'No metal (Halógeno)';
+                 else if (group >= 3 && group <= 12) classification = 'Metal de transición';
+                 else if (group === 1 || group === 2) classification = 'Metal';
+            }
+            
+            return {
+                period: nMax,
+                group: group,
+                block: block,
+                valence: valenceElectrons,
+                classif: classification,
+                elem: el ? `${el.name} (${el.sym})` : `Z=${totalZ}`,
+                symbol: el ? el.sym : '?'
+            };
+        }
+
+        // ===================== UI =====================
+        const cfgEl = document.getElementById('cfg');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        const errEl = document.getElementById('error');
+
+        const out = {
+            period: document.getElementById('period'),
+            group: document.getElementById('group'),
+            block: document.getElementById('block'),
+            valence: document.getElementById('valence'),
+            classif: document.getElementById('classif'),
+            elem: document.getElementById('elem')
+        };
+
+        const EXAMPLES = [
+            '1s2 2s1', '[Ne] 3s2 3p5', '[Ar] 4s2 3d7', '[Kr] 5s2 4d10 5p3',
+            '1s2 2s2 2p6 3s2 3p6 4s1', '[Ar] 4s2 3d10 4p2', '1s2', '[Ne]'
+        ];
+
+        function analyze() {
+            errEl.classList.add('hidden');
+            const parsed = parseConfiguration(cfgEl.value);
+            if (!parsed) {
+                errEl.classList.remove('hidden');
+                resetOutputs();
+                return;
+            }
+            
+            const props = deduceProperties(parsed);
+            
+            out.period.textContent = props.period || '—';
+            out.group.textContent = props.group || (props.block==='D' ? '— (bloque d)' : '—');
+            out.block.textContent = props.block || '—';
+            out.valence.textContent = props.valence ?? '—';
+            out.classif.textContent = props.classif || '—';
+            out.elem.textContent = props.elem || '—';
+
+            placeMarker(props.period, props.group, props.symbol);
+        }
+
+        function resetOutputs() {
+            Object.values(out).forEach(el => el.textContent = '—');
+            placeMarker(null, null, '');
+        }
+
+        analyzeBtn.addEventListener('click', analyze);
+        randomBtn.addEventListener('click', () => {
+            cfgEl.value = EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
+            analyze();
+        });
+        cfgEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') analyze(); });
+
+        // Demo inicial
+        cfgEl.value = '[Ne] 3s2 3p4';
+        analyze();
+    });
+    </script>
+</body>
+</html>
